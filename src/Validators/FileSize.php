@@ -2,6 +2,7 @@
 
 namespace ShoplicKr\Uploady\Validators;
 
+use Cassandra\Exception\ValidationException;
 use ShoplicKr\Uploady\File;
 
 class FileSize implements Validator
@@ -31,15 +32,15 @@ class FileSize implements Validator
     public function validate(File $item)
     {
         if ($this->exactSize > 0 && $this->exactSize !== $item->size) {
-            // throw.
+            throw new ValidationException('File size does not match the expected size.', 'fileSize');
         }
 
         if ($this->minSize > 0 && $this->minSize > $item->size) {
-            // throw.
+            throw new ValidationException('File size is smaller than the minimum size.', 'fileSize');
         }
 
         if ($this->maxSize > 0 && $this->maxSize < $this->size) {
-            // throw.
+            throw new ValidationException('File size is larger than the maximum size.', 'fileSize');
         }
     }
 
