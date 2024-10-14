@@ -6,5 +6,5 @@ use ShoplicKr\Uploady\File;
 
 interface Validator
 {
-    public function validate(File $item);
+    public function validate();
 }

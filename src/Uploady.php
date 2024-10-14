@@ -2,6 +2,7 @@
 
 namespace ShoplicKr\Uploady;
 
+use ShoplicKr\Uploady\Validators\NumFiles;
 use ShoplicKr\Uploady\Validators\Validator;
 use WP_Error;
 
@@ -22,18 +23,10 @@ class Uploady
         $error  = new WP_Error();
         $config = wp_parse_args($config, self::getDefaultConfig());
 
-        // Multiple upload check.
-        $allowMultiple = $config['allowMultiple'];
-        if (!$allowMultiple && $isMultiple) {
-            $error->add('allowMultiple', 'Multiple file upload is not allowed.');
-            return $error;
-        }
-        unset($config['allowMultiple']);
-
-        foreach ($items as $idx => $item) {
-            foreach ($config as $criteria => $args) {
-                $validator = self::_getValidator($criteria, $args, $isMultiple, $idx);
-                if (!$validator->validate($item)) {
+        foreach ($config as $criteria => $args) {
+            foreach ($items as $idx => $item) {
+                $validator = self::getValidator($criteria, $args, $item, $idx, $items);
+                if ($validator && !$validator->validate($item)) {
                     $error->add($vadiator->getErrorCode(), $validator->getErrorMessage());
                 }
             }
@@ -42,12 +35,12 @@ class Uploady
         return $error->has_errors() ? $error : true;
     }
 
-    private static function _getValidator(
+    private static function getValidator(
         string $criteria,
         mixed  $args,
         bool   $isMultiple,
         int    $idx,
-    ): Validator
+    ): Validator|null
     {
     }
 
