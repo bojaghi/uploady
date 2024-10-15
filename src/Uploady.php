@@ -2,7 +2,10 @@
 
 namespace ShoplicKr\Uploady;
 
+use ShoplicKr\Uploady\Validators\FileSize;
+use ShoplicKr\Uploady\Validators\FileType;
 use ShoplicKr\Uploady\Validators\NumFiles;
+use ShoplicKr\Uploady\Validators\ValidationError;
 use ShoplicKr\Uploady\Validators\Validator;
 use WP_Error;
 
@@ -12,16 +15,19 @@ class Uploady
         string     $varName,
         array      $config = [],
         array|null $file = null,
-    ): true|WP_Error
+    ): bool|WP_Error
     {
         if (is_null($file)) {
             $file = $_FILES[$varName] ?? [];
         }
 
         [$items, $isMultiple] = self::_filesToItems($file);
-
-        $error  = new WP_Error();
-        $config = wp_parse_args($config, self::getDefaultConfig());
+        $error = self::_builtinValidation(
+            $items,
+            $isMultiple,
+            $config,
+            $varName,
+        );
 
         foreach ($config as $criteria => $args) {
             foreach ($items as $idx => $item) {
@@ -33,6 +39,47 @@ class Uploady
         }
 
         return $error->has_errors() ? $error : true;
+    }
+
+    private static function _builtinValidation(
+        array  $items,
+        bool   $isMultiple,
+        array  $config,
+        string $varName,
+    ): WP_Error
+    {
+        $error  = new WP_Error();
+        $config = wp_parse_args($config, self::_getDefaultConfig());
+
+        // required
+        $required = $config['required'];
+        if ($required && empty($items)) {
+            $error->add('required', sprintf("'%s' file upload is required.", $varName));
+            return $error;
+        }
+
+        // allowMultiple
+        $allowMultiple = $config['allowMultiple'];
+        if (!$allowMultiple && $isMultiple) {
+            $error->add('allowMultiple', sprintf("'%s' does not allow multiple file upload.", $varName));
+            return $error;
+        }
+
+        // numFiles
+        if ($allowMultiple) {
+            $numFiles = new NumFiles($items, $config['numFiles'], $varName);
+            $numFiles->validate();
+        }
+
+        // fileSize
+        $fileSize = new FileSize($items, $config['fileSize'], $varName);
+        $fileSize->validate();
+
+        // fileType
+        $fileType = new FileType($items, $config['fileType'], $varName);
+        $fileType->validate();
+
+        return $error;
     }
 
     private static function getValidator(
@@ -94,13 +141,14 @@ class Uploady
         return [$items, $isArray];
     }
 
-    public static function getDefaultConfig(): array
+    public static function _getDefaultConfig(): array
     {
         return [
             'allowMultiple' => false,
-            'numFiles'      => null,
             'fileSize'      => null,
             'fileTypes'     => null,
+            'numFiles'      => null,
+            'required'      => false,
         ];
     }
 }

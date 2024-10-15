@@ -37,6 +37,10 @@
             "@wp-tests:setenv",
             "rm -rf $WP_CORE_DIR $PWP_TESTS_DIR"
         ],
+        "wp-tests:env": [
+            "@wp-tests:setenv",
+            "vendor/bin/wp-tests -d"
+        ],
         "wp-tests:setenv": [
             "@putenv WP_CORE_DIR=./tests/wp-test-core",
             "@putenv WP_TESTS_DIR=./tests/wp-test-lib",

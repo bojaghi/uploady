@@ -2,20 +2,23 @@
 
 namespace ShoplicKr\Uploady\Validators;
 
-use Cassandra\Exception\ValidationException;
 use ShoplicKr\Uploady\File;
 
 class FileSize implements Validator
 {
+    private File $file;
+
     private int $exactSize;
 
     private int $maxSize;
 
     private int $minSize;
 
-    public function __construct(array $args = [])
+    public function __construct(File $file, array $args = [])
     {
-        $args = wp_parse_arge(
+        $this->file = $file;
+
+        $args = wp_parse_args(
             $args,
             [
                 'exact' => '',
@@ -29,18 +32,21 @@ class FileSize implements Validator
         $this->minSize   = self::parseSize($args['min']);
     }
 
-    public function validate(File $item)
+    /**
+     * @throws ValidationError
+     */
+    public function validate(): void
     {
-        if ($this->exactSize > 0 && $this->exactSize !== $item->size) {
-            throw new ValidationException('File size does not match the expected size.', 'fileSize');
+        if ($this->exactSize > 0 && $this->exactSize !== $this->file->size) {
+            throw new ValidationError('File size does not match the expected size.', 'fileSize');
         }
 
-        if ($this->minSize > 0 && $this->minSize > $item->size) {
-            throw new ValidationException('File size is smaller than the minimum size.', 'fileSize');
+        if ($this->minSize > 0 && $this->minSize > $this->file->size) {
+            throw new ValidationError('File size is smaller than the minimum size.', 'fileSize');
         }
 
-        if ($this->maxSize > 0 && $this->maxSize < $this->size) {
-            throw new ValidationException('File size is larger than the maximum size.', 'fileSize');
+        if ($this->maxSize > 0 && $this->maxSize < $this->file->size) {
+            throw new ValidationError('File size is larger than the maximum size.', 'fileSize');
         }
     }
 
